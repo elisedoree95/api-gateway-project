@@ -22,7 +22,7 @@ resource "aws_iam_policy" "s3_api_access_policy" {
     Statement = [
       {
         Effect   = "Allow"
-        Action   = ["s3:GetObject", "s3:PutObject", "s3:ListBucket"]
+        Action   = ["s3:GetBucketPolicy", "s3:GetObject", "s3:PutObject", "s3:ListBucket"]
         Resource = [
           "arn:aws:s3:::my-project2-bucket",
           "arn:aws:s3:::my-project2-bucket/*"

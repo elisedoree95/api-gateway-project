@@ -44,6 +44,82 @@ resource "aws_iam_policy" "lambda_glue_policy" {
     ]
   })
 }
+resource "aws_glue_job" "glue_hello_world" {
+  name     = "HelloWorld"
+  role_arn = aws_iam_role.glue_role.arn  # IAM Role for Glue job
+  glue_version  = "4.0"
+
+  command {
+    name            = "glueetl"
+    script_location = "s3://my-glue-scripts-bucket/scripts/glue_script.py"
+    python_version  = "3"
+  }
+
+  max_capacity = 2.0
+  timeout      = 10
+}
+
+# IAM Role for Glue Job
+resource "aws_iam_role" "glue_role" {
+  name = "glue_execution_role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "glue.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# IAM Policy for Glue Job
+resource "aws_iam_policy" "glue_policy" {
+  name        = "glue_policy"
+  description = "Policy for Glue job execution"
+  policy      = jsonencode({
+    Version : "2012-10-17",
+    Statement : [
+      {
+        Effect   : "Allow",
+        Action   : [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket"
+        ],
+        Resource : "arn:aws:s3:::your-bucket/*"
+      },
+      {
+        Effect   : "Allow",
+        Action   : [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource : "*"
+      },
+      {
+        Effect   : "Allow",
+        Action   : [
+          "glue:GetJob",
+          "glue:GetJobRun",
+          "glue:GetJobRuns",
+          "glue:StartJobRun"
+        ],
+        Resource : "*"
+      }
+    ]
+  })
+}
+
+# Attach Policy to IAM Role
+resource "aws_iam_role_policy_attachment" "glue_policy_attachment" {
+  role       = aws_iam_role.glue_role.name
+  policy_arn = aws_iam_policy.glue_policy.arn
+}
 
 # Attach Policy to IAM Role
 resource "aws_iam_role_policy_attachment" "lambda_glue_policy_attachment" {
@@ -63,6 +139,7 @@ resource "aws_lambda_function" "glue_lambda" {
 
   source_code_hash = filebase64sha256("../lambda_function.zip")
 }
+
 
 # API Gateway REST API
 resource "aws_api_gateway_rest_api" "glue_api" {
