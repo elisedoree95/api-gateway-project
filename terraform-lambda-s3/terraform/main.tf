@@ -24,8 +24,8 @@ resource "aws_iam_policy" "s3_api_access_policy" {
         Effect   = "Allow"
         Action   = ["s3:GetBucketPolicy", "s3:GetObject", "s3:PutObject", "s3:ListBucket"]
         Resource = [
-          "arn:aws:s3:::my-project2-bucket",
-          "arn:aws:s3:::my-project2-bucket/*"
+          "arn:aws:s3:::my-project2-bucket0504",
+          "arn:aws:s3:::my-project2-bucket0504*"
         ]
       },
       {
@@ -45,10 +45,31 @@ resource "aws_iam_role_policy_attachment" "lambda_s3_api_attach" {
 
 # S3 Bucket
 resource "aws_s3_bucket" "lambda_bucket" {
-  bucket = "my-project2-bucket-${random_id.bucket_suffix.hex}"
+  bucket = "my-project2-bucket0504"
 }
 resource "random_id" "bucket_suffix" {
   byte_length = 4
+}
+
+resource "aws_s3_bucket_policy" "my_bucket_policy" {
+  bucket = aws_s3_bucket.lambda_bucket.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::767398151553:role/LambdaS3ApiRole"
+        }
+        Action = "s3:PutObject"
+        Resource = [
+          "arn:aws:s3:::my-project2-bucket0504/*",
+
+        ]
+      }
+    ]
+  })
 }
 
 # Lambda Function
